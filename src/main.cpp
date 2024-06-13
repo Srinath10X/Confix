@@ -1,3 +1,4 @@
+#include <argparse/argparse.hpp>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -9,6 +10,8 @@
 #include <vector>
 
 using namespace Json;
+
+const std::string VERSION = "0.1.0";
 
 // Function to check if a package is installed using yay
 bool isPackageInstalled(const std::string &packageName) {
@@ -42,10 +45,19 @@ std::string removeComments(const std::string &jsoncContent) {
 }
 
 // Function to get package file path
-std::string getPackageFilePath() {
+std::string getPackageFilePath(const std::string &customPath = "") {
+  const char *envPath = getenv("CONFIX_PACKAGES_PATH");
+  if (envPath && strlen(envPath) > 0) {
+    return std::string(envPath);
+  }
+
   const char *homeDir = getenv("HOME");
   if (!homeDir) {
     throw std::runtime_error("Failed to get home directory");
+  }
+
+  if (!customPath.empty()) {
+    return customPath;
   }
 
   // Default paths
@@ -104,6 +116,33 @@ std::vector<std::string> parsePackageFile(const std::string &fileContent,
   return packages;
 }
 
+// Function to update package file
+void updatePackageFile(const std::string &filePath,
+                       const std::vector<std::string> &packages, bool isJsonc) {
+  Value packageData;
+  packageData["packages"] = Json::arrayValue;
+
+  for (const std::string &package : packages) {
+    packageData["packages"].append(package);
+  }
+
+  std::ofstream file(filePath);
+  if (!file.is_open()) {
+    throw std::runtime_error("Failed to open packages file for writing: " +
+                             filePath);
+  }
+
+  if (isJsonc) {
+    // Writing JSONC content requires preserving comments, which is not
+    // straightforward. Here we just write the JSON part.
+    file << packageData.toStyledString();
+  } else {
+    file << packageData.toStyledString();
+  }
+
+  file.close();
+}
+
 // Function to handle packages
 void handlePackages(const std::vector<std::string> &packages) {
   for (const std::string &package : packages) {
@@ -117,17 +156,60 @@ void handlePackages(const std::vector<std::string> &packages) {
   }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+  argparse::ArgumentParser program("confix", VERSION);
+
+  program.add_argument("-f", "--file")
+      .help("specify a custom package file path")
+      .default_value(std::string(""));
+
+  program.add_argument("-c", "--check")
+      .help("check if a specific package is installed")
+      .default_value(std::string(""));
+
+  program.add_argument("-i", "--install")
+      .help("install a specific package")
+      .default_value(std::string(""));
+
   try {
-    std::string packageFilePath = getPackageFilePath();
+    program.parse_args(argc, argv);
 
-    // Determine if the file is JSON or JSONC
+    std::string customFilePath = program.get<std::string>("--file");
+    std::string checkPackage = program.get<std::string>("--check");
+    std::string installPackageName = program.get<std::string>("--install");
+
+    if (!checkPackage.empty()) {
+      if (isPackageInstalled(checkPackage)) {
+        std::cout << "Package " << checkPackage << " is installed."
+                  << std::endl;
+      } else {
+        std::cout << "Package " << checkPackage << " is not installed."
+                  << std::endl;
+      }
+      return 0;
+    }
+
+    std::string packageFilePath = getPackageFilePath(customFilePath);
     bool isJsonc = packageFilePath.find(".jsonc") != std::string::npos;
-
     std::string fileContent = readFileContent(packageFilePath);
     std::vector<std::string> packages = parsePackageFile(fileContent, isJsonc);
-    handlePackages(packages);
 
+    if (!installPackageName.empty()) {
+      if (!isPackageInstalled(installPackageName)) {
+        installPackage(installPackageName);
+        std::cout << "Package " << installPackageName << " has been installed."
+                  << std::endl;
+
+        packages.push_back(installPackageName);
+        updatePackageFile(packageFilePath, packages, isJsonc);
+      } else {
+        std::cout << "Package " << installPackageName
+                  << " is already installed." << std::endl;
+      }
+      return 0;
+    }
+
+    handlePackages(packages);
     std::cout << "All packages are installed." << std::endl;
   } catch (const std::exception &ex) {
     std::cerr << "Error: " << ex.what() << std::endl;
