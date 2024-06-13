@@ -91,7 +91,13 @@ Ensure your configuration file (`~/.config/confix/packages.json`) follows this s
 
 ```json
 {
-	"packages": ["package1", "package2", "package3"]
+	"packages": [
+		"neovim",
+		"firefox",
+		"spotify",
+		"discord",
+		...
+	]
 }
 ```
 
