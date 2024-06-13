@@ -5,105 +5,128 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include <sys/stat.h>
 #include <vector>
 
 using namespace Json;
 
 // Function to check if a package is installed using yay
-bool is_package_installed(const std::string &package_name) {
-  std::string command = "yay -Qs " + package_name + " > /dev/null 2>&1";
+bool isPackageInstalled(const std::string &packageName) {
+  std::string command = "yay -Qs " + packageName + " > /dev/null 2>&1";
   int result = std::system(command.c_str());
   return result == 0;
 }
 
 // Function to install a package using yay
-void install_package(const std::string &package_name) {
-  std::string command = "yay -S --noconfirm " + package_name;
+void installPackage(const std::string &packageName) {
+  std::string command = "yay -S --noconfirm " + packageName;
   int result = std::system(command.c_str());
   if (result != 0) {
-    throw std::runtime_error("Failed to install package: " + package_name);
+    throw std::runtime_error("Failed to install package: " + packageName);
   }
 }
 
 // Function to remove comments from JSONC content
-std::string remove_comments(const std::string &jsonc_content) {
-  std::string result = jsonc_content;
+std::string removeComments(const std::string &jsoncContent) {
+  std::string result = jsoncContent;
 
   // Remove single-line comments
-  std::regex single_line_comment_pattern("//.*");
-  result = std::regex_replace(result, single_line_comment_pattern, "");
+  std::regex singleLineCommentPattern("//.*");
+  result = std::regex_replace(result, singleLineCommentPattern, "");
 
   // Remove multi-line comments
-  std::regex multi_line_comment_pattern("/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/");
-  result = std::regex_replace(result, multi_line_comment_pattern, "");
+  std::regex multiLineCommentPattern("/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/");
+  result = std::regex_replace(result, multiLineCommentPattern, "");
 
   return result;
 }
 
+// Function to get package file path
+std::string getPackageFilePath() {
+  const char *homeDir = getenv("HOME");
+  if (!homeDir) {
+    throw std::runtime_error("Failed to get home directory");
+  }
+
+  // Default paths
+  std::string jsonPath = std::string(homeDir) + "/.config/confix/packages.json";
+  std::string jsoncPath =
+      std::string(homeDir) + "/.config/confix/packages.jsonc";
+
+  // Check if the .json file exists
+  struct stat buffer;
+  if (stat(jsonPath.c_str(), &buffer) == 0) {
+    return jsonPath;
+  }
+
+  // Check if the .jsonc file exists
+  if (stat(jsoncPath.c_str(), &buffer) == 0) {
+    return jsoncPath;
+  }
+
+  throw std::runtime_error(
+      "Neither packages.json nor packages.jsonc file exists");
+}
+
+// Function to read package file content
+std::string readFileContent(const std::string &filePath) {
+  std::ifstream file(filePath);
+  if (!file.is_open()) {
+    throw std::runtime_error("Failed to open packages file: " + filePath);
+  }
+  std::string fileContent((std::istreambuf_iterator<char>(file)),
+                          std::istreambuf_iterator<char>());
+  file.close();
+  return fileContent;
+}
+
+// Function to parse package file
+std::vector<std::string> parsePackageFile(const std::string &fileContent,
+                                          bool isJsonc) {
+  std::string jsonContent = isJsonc ? removeComments(fileContent) : fileContent;
+
+  Value packageData;
+  CharReaderBuilder reader;
+  std::string errs;
+  std::istringstream stream(jsonContent);
+  if (!parseFromStream(reader, stream, &packageData, &errs)) {
+    throw std::runtime_error("Failed to parse packages file: " + errs);
+  }
+
+  std::vector<std::string> packages;
+  if (packageData.isMember("packages") && packageData["packages"].isArray()) {
+    for (Value::ArrayIndex i = 0; i < packageData["packages"].size(); ++i) {
+      packages.push_back(packageData["packages"][i].asString());
+    }
+  } else {
+    throw std::runtime_error("Invalid packages file format");
+  }
+  return packages;
+}
+
+// Function to handle packages
+void handlePackages(const std::vector<std::string> &packages) {
+  for (const std::string &package : packages) {
+    if (!isPackageInstalled(package)) {
+      std::cout << "Installing package: " << package << std::endl;
+      installPackage(package);
+    } else {
+      std::cout << "Package " << package << " is already installed."
+                << std::endl;
+    }
+  }
+}
+
 int main() {
   try {
-    // Get the home directory from the environment variable
-    const char *home_dir = getenv("HOME");
-    if (!home_dir) {
-      throw std::runtime_error("Failed to get home directory");
-    }
+    std::string packageFilePath = getPackageFilePath();
 
-    // Get the CONFIX_PACKAGES_PATH environment variable
-    const char *package_path_env = getenv("CONFIX_PACKAGES_FILE_PATH");
-    std::string package_file_path;
+    // Determine if the file is JSON or JSONC
+    bool isJsonc = packageFilePath.find(".jsonc") != std::string::npos;
 
-    if (package_path_env) {
-      package_file_path = package_path_env;
-    } else {
-      // Default package file path
-      package_file_path =
-          std::string(home_dir) + "/.config/confix/packages.jsonc";
-    }
-
-    // Open and read the JSON file
-    std::ifstream file(package_file_path);
-    if (!file.is_open()) {
-      throw std::runtime_error("Failed to open packages.jsonc file");
-    }
-
-    // Read file content into a string (to preprocess for JSONC)
-    std::string file_content((std::istreambuf_iterator<char>(file)),
-                             std::istreambuf_iterator<char>());
-    file.close();
-
-    // Remove comments from JSONC content
-    std::string json_content = remove_comments(file_content);
-
-    Value package_data;
-    CharReaderBuilder reader;
-    std::string errs;
-
-    std::istringstream stream(json_content);
-    if (!parseFromStream(reader, stream, &package_data, &errs)) {
-      throw std::runtime_error("Failed to parse packages.jsonc file: " + errs);
-    }
-
-    // Extract package names
-    std::vector<std::string> packages;
-    if (package_data.isMember("packages") &&
-        package_data["packages"].isArray()) {
-      for (Value::ArrayIndex i = 0; i < package_data["packages"].size(); ++i) {
-        packages.push_back(package_data["packages"][i].asString());
-      }
-    } else {
-      throw std::runtime_error("Invalid packages.jsonc file format");
-    }
-
-    // Check and install each package
-    for (const std::string &package : packages) {
-      if (!is_package_installed(package)) {
-        std::cout << "Installing package: " << package << std::endl;
-        install_package(package);
-      } else {
-        std::cout << "Package " << package << " is already installed."
-                  << std::endl;
-      }
-    }
+    std::string fileContent = readFileContent(packageFilePath);
+    std::vector<std::string> packages = parsePackageFile(fileContent, isJsonc);
+    handlePackages(packages);
 
     std::cout << "All packages are installed." << std::endl;
   } catch (const std::exception &ex) {
