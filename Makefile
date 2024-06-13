@@ -1,15 +1,16 @@
 CXX = g++
 CXXFLAGS = -g -Wall -Werror
 
-MAIN_FILE = main.cpp
+MAIN_FILE = src/main.cpp
+BIN_FILE_NAME = confix
 
 all: main
 
 main: $(MAIN_FILE)
-	$(CXX) $(CXXFLAGS) $(MAIN_FILE) -o confix
+	$(CXX) $(CXXFLAGS) $(MAIN_FILE) -o $(BIN_FILE_NAME)
 
 install:
-	mv confix-beta $(shell echo "$$HOME")/.local/bin/
+	mv $(BIN_FILE_NAME) $(shell echo "$$HOME")/.local/bin/
 
 clean:
-	rm -f confix-beta confix-test
+	rm -f $(BIN_FILE_NAME)
