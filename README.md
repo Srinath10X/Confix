@@ -18,7 +18,7 @@ Confix is a powerful yet simple CLI tool designed to help you manage package con
 - 🔍 **Check** if packages are installed
 - 📥 **Install** missing packages
 - 📝 **Manage** configurations with ease
-- 🌟 Supports **JSON**
+- 🌟 Supports **JSON** and **JSONC** (kindoff)
 
 Get your configurations fixed with Confix! 🛠️🔧
 
@@ -83,20 +83,21 @@ After installation, you can run Confix from the terminal:
 confix
 ```
 
-Confix will read the configuration file (`~/.config/confix/packages.json`), check for the specified packages, and install any that are missing.
+Confix will read the configuration file (`~/.config/confix/packages.json` or `~/.config/confix/packages.jsonc`), check for the specified packages, and install any that are missing.
 
 ## Configuration
 
-Ensure your configuration file (`~/.config/confix/packages.json`) follows this structure:
+Ensure your configuration file (`~/.config/confix/packages.json` or `~/.config/confix/packages.jsoc`) follows this structure:
 
 ```json
 {
 	"packages": [
-		"neovim",
-		"firefox",
-		"spotify",
-		"discord",
-		...
+		"package1",
+		"package2",
+		"package3",
+		"package4",
+		"....",
+		"packageN"
 	]
 }
 ```

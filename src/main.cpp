@@ -13,6 +13,13 @@ using namespace Json;
 
 const std::string VERSION = "0.1.0";
 
+// Function to check if a package is available in AUR
+bool isPackageAvailableInAUR(const std::string &packageName) {
+  std::string command = "yay -Si " + packageName + " > /dev/null 2>&1";
+  int result = std::system(command.c_str());
+  return result == 0;
+}
+
 // Function to check if a package is installed using yay
 bool isPackageInstalled(const std::string &packageName) {
   std::string command = "yay -Qs " + packageName + " > /dev/null 2>&1";
@@ -22,6 +29,11 @@ bool isPackageInstalled(const std::string &packageName) {
 
 // Function to install a package using yay
 void installPackage(const std::string &packageName) {
+  // Check if package is available in AUR
+  if (!isPackageAvailableInAUR(packageName)) {
+    throw std::runtime_error("Package " + packageName + " not found in AUR.");
+  }
+
   std::string command = "yay -S --noconfirm " + packageName;
   int result = std::system(command.c_str());
   if (result != 0) {
@@ -157,7 +169,7 @@ void handlePackages(const std::vector<std::string> &packages) {
 }
 
 int main(int argc, char *argv[]) {
-  argparse::ArgumentParser program("confix", VERSION);
+  argparse::ArgumentParser program("confix");
 
   program.add_argument("-f", "--file")
       .help("specify a custom package file path")
@@ -165,11 +177,13 @@ int main(int argc, char *argv[]) {
 
   program.add_argument("-c", "--check")
       .help("check if a specific package is installed")
-      .default_value(std::string(""));
+      .default_value(std::string(""))
+      .metavar("PACKAGE");
 
   program.add_argument("-i", "--install")
       .help("install a specific package")
-      .default_value(std::string(""));
+      .default_value(std::string(""))
+      .metavar("PACKAGE");
 
   try {
     program.parse_args(argc, argv);
@@ -195,16 +209,19 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> packages = parsePackageFile(fileContent, isJsonc);
 
     if (!installPackageName.empty()) {
-      if (!isPackageInstalled(installPackageName)) {
+      try {
         installPackage(installPackageName);
         std::cout << "Package " << installPackageName << " has been installed."
                   << std::endl;
 
-        packages.push_back(installPackageName);
-        updatePackageFile(packageFilePath, packages, isJsonc);
-      } else {
-        std::cout << "Package " << installPackageName
-                  << " is already installed." << std::endl;
+        // Check for duplication before adding
+        if (std::find(packages.begin(), packages.end(), installPackageName) ==
+            packages.end()) {
+          packages.push_back(installPackageName);
+          updatePackageFile(packageFilePath, packages, isJsonc);
+        }
+      } catch (const std::runtime_error &ex) {
+        std::cerr << "Error: " << ex.what() << std::endl;
       }
       return 0;
     }
