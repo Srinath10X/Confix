@@ -181,8 +181,9 @@ int main(int argc, char *argv[]) {
       .metavar("PACKAGE");
 
   program.add_argument("-i", "--install")
-      .help("install a specific package")
-      .default_value(std::string(""))
+      .help("install specific packages")
+      .nargs(argparse::nargs_pattern::at_least_one)
+      .default_value(std::vector<std::string>{})
       .metavar("PACKAGE");
 
   try {
@@ -190,7 +191,8 @@ int main(int argc, char *argv[]) {
 
     std::string customFilePath = program.get<std::string>("--file");
     std::string checkPackage = program.get<std::string>("--check");
-    std::string installPackageName = program.get<std::string>("--install");
+    std::vector<std::string> installPackages =
+        program.get<std::vector<std::string>>("--install");
 
     if (!checkPackage.empty()) {
       if (isPackageInstalled(checkPackage)) {
@@ -208,20 +210,22 @@ int main(int argc, char *argv[]) {
     std::string fileContent = readFileContent(packageFilePath);
     std::vector<std::string> packages = parsePackageFile(fileContent, isJsonc);
 
-    if (!installPackageName.empty()) {
-      try {
-        installPackage(installPackageName);
-        std::cout << "Package " << installPackageName << " has been installed."
-                  << std::endl;
+    if (!installPackages.empty()) {
+      for (const std::string &installPackageName : installPackages) {
+        try {
+          installPackage(installPackageName);
+          std::cout << "Package " << installPackageName
+                    << " has been installed." << std::endl;
 
-        // Check for duplication before adding
-        if (std::find(packages.begin(), packages.end(), installPackageName) ==
-            packages.end()) {
-          packages.push_back(installPackageName);
-          updatePackageFile(packageFilePath, packages, isJsonc);
+          // Check for duplication before adding
+          if (std::find(packages.begin(), packages.end(), installPackageName) ==
+              packages.end()) {
+            packages.push_back(installPackageName);
+            updatePackageFile(packageFilePath, packages, isJsonc);
+          }
+        } catch (const std::runtime_error &ex) {
+          std::cerr << "Error: " << ex.what() << std::endl;
         }
-      } catch (const std::runtime_error &ex) {
-        std::cerr << "Error: " << ex.what() << std::endl;
       }
       return 0;
     }
