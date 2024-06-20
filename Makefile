@@ -11,6 +11,7 @@ main: $(MAIN_FILE)
 	$(CXX) $(CXXFLAGS) $(MAIN_FILE) $(LIBS) -o $(BIN_FILE_NAME)
 
 install:
+	$(CXX) $(CXXFLAGS) $(MAIN_FILE) $(LIBS) -o $(BIN_FILE_NAME)
 	mv $(BIN_FILE_NAME) $(shell echo "$$HOME")/.local/bin/
 
 clean:

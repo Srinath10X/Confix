@@ -1,4 +1,4 @@
-# 🛠️ Confix: Your Friendly Configuration Manager 🚀
+# 🛠️ Confix 🚀
 
 Confix is a powerful yet simple CLI tool designed to help you manage package configurations effortlessly. 📦✨
 
@@ -110,4 +110,4 @@ Contributions are welcome! If you have suggestions or improvements, please feel 
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the GPL v3 License.

@@ -1,3 +1,12 @@
 {
-	"packages": [],
+	// This is an example configuration file
+	// Author: Srinath10X
+	// repo: https://github.com/Srinath10X/Confix
+	"packages": [
+		/*
+		 "neovim",
+		 "git",
+		 "github-cli",
+		*/
+	],
 }
