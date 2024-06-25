@@ -57,19 +57,13 @@ git clone https://github.com/Srinath10X/Confix.git
 cd Confix
 ```
 
-3. Compile the source code using the provided Makefile:
-
-```bash
-make
-```
-
-4. Install Confix to your local bin directory:
+3. Compile the source and Install confix :
 
 ```bash
 make install
 ```
 
-5. Ensure your local bin directory is in your PATH (if not already):
+4. Ensure your local bin directory is in your PATH (if not already):
 
 ```bash
 export PATH=$PATH:$HOME/.local/bin:$HOME/bin

@@ -1,3 +1,4 @@
+#include "./modules/PackageManagerDetector/PackageManagerDetector.h"
 #include <argparse/argparse.hpp>
 #include <cstdlib>
 #include <fstream>
@@ -155,20 +156,59 @@ void updatePackageFile(const std::string &filePath,
   file.close();
 }
 
-// Function to handle packages
 void handlePackages(const std::vector<std::string> &packages) {
+  std::string command = "yay -Qs ";
   for (const std::string &package : packages) {
-    if (!isPackageInstalled(package)) {
-      std::cout << "Installing package: " << package << std::endl;
-      installPackage(package);
-    } else {
-      std::cout << "Package " << package << " is already installed."
-                << std::endl;
+    command += package + " ";
+  }
+  int result = std::system(command.c_str());
+
+  std::vector<std::string> packagesToInstall;
+  if (result != 0) {
+    for (const std::string &package : packages) {
+      if (!isPackageInstalled(package)) {
+        packagesToInstall.push_back(package);
+      } else {
+        std::cout << "Package " << package << " is already installed."
+                  << std::endl;
+      }
     }
+  } else {
+    std::cout << "All packages are installed." << std::endl;
+  }
+
+  for (const std::string &package : packagesToInstall) {
+    std::cout << "Installing package: " << package << std::endl;
+    installPackage(package);
   }
 }
 
+std::string execCommand(const std::string &command) {
+  char buffer[128];
+  std::string result = "";
+  FILE *pipe = popen(command.c_str(), "r");
+  if (!pipe) {
+    throw std::runtime_error("Failed to execute command: " + command);
+  }
+  try {
+    while (!feof(pipe)) {
+      if (fgets(buffer, 128, pipe) != NULL)
+        result += buffer;
+    }
+  } catch (...) {
+    pclose(pipe);
+    throw;
+  }
+  pclose(pipe);
+  return result;
+}
+
 int main(int argc, char *argv[]) {
+  std::string packageManager = detectPackageManager();
+
+  std::cout << "Detected Package Manager: " << packageManager << std::endl;
+
+  std::cout << detectPackageManager();
   argparse::ArgumentParser program("confix");
 
   program.add_argument("-f", "--file")
@@ -231,7 +271,6 @@ int main(int argc, char *argv[]) {
     }
 
     handlePackages(packages);
-    std::cout << "All packages are installed." << std::endl;
   } catch (const std::exception &ex) {
     std::cerr << "Error: " << ex.what() << std::endl;
     return 1;
