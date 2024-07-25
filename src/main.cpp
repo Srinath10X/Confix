@@ -1,4 +1,3 @@
-#include "./modules/PackageManagerDetector/PackageManagerDetector.h"
 #include <argparse/argparse.hpp>
 #include <cstdlib>
 #include <fstream>
@@ -12,7 +11,7 @@
 
 using namespace Json;
 
-const std::string VERSION = "0.1.0";
+const std::string VERSION = "confix v0.1.0";
 
 // Function to check if a package is available in AUR
 bool isPackageAvailableInAUR(const std::string &packageName) {
@@ -23,7 +22,7 @@ bool isPackageAvailableInAUR(const std::string &packageName) {
 
 // Function to check if a package is installed using yay
 bool isPackageInstalled(const std::string &packageName) {
-  std::string command = "yay -Qs " + packageName + " > /dev/null 2>&1";
+  std::string command = "yay -Q " + packageName + " > /dev/null 2>&1";
   int result = std::system(command.c_str());
   return result == 0;
 }
@@ -35,7 +34,7 @@ void installPackage(const std::string &packageName) {
     throw std::runtime_error("Package " + packageName + " not found in AUR.");
   }
 
-  std::string command = "yay -S --noconfirm " + packageName;
+  std::string command = "yay -Sy --noconfirm " + packageName;
   int result = std::system(command.c_str());
   if (result != 0) {
     throw std::runtime_error("Failed to install package: " + packageName);
@@ -204,12 +203,7 @@ std::string execCommand(const std::string &command) {
 }
 
 int main(int argc, char *argv[]) {
-  std::string packageManager = detectPackageManager();
-
-  std::cout << "Detected Package Manager: " << packageManager << std::endl;
-
-  std::cout << detectPackageManager();
-  argparse::ArgumentParser program("confix");
+  argparse::ArgumentParser program("confix", VERSION);
 
   program.add_argument("-f", "--file")
       .help("specify a custom package file path")
