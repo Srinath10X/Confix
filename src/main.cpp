@@ -11,7 +11,7 @@
 
 using namespace Json;
 
-const std::string VERSION = "confix v0.1.0";
+const std::string VERSION = "confix v0.1.1";
 
 // Function to check if a package is available in AUR
 bool isPackageAvailableInAUR(const std::string &packageName) {
@@ -202,6 +202,23 @@ std::string execCommand(const std::string &command) {
   return result;
 }
 
+void sortAndUpdatePackagesInFile(const std::string &filePath, bool isJsonc) {
+  // Read the file content
+  std::string fileContent = readFileContent(filePath);
+
+  // Parse the package file
+  std::vector<std::string> packages = parsePackageFile(fileContent, isJsonc);
+
+  // Sort the packages
+  std::sort(packages.begin(), packages.end());
+
+  // Update the package file
+  updatePackageFile(filePath, packages, isJsonc);
+
+  // Display sorted packages
+  std::cout << "Packages have been sorted and updated in the file:\n";
+}
+
 int main(int argc, char *argv[]) {
   argparse::ArgumentParser program("confix", VERSION);
 
@@ -220,6 +237,11 @@ int main(int argc, char *argv[]) {
       .default_value(std::vector<std::string>{})
       .metavar("PACKAGE");
 
+  program.add_argument("-s", "--sort")
+      .help("sort packages alphabetically in the package file")
+      .default_value(false)
+      .implicit_value(true);
+
   try {
     program.parse_args(argc, argv);
 
@@ -227,6 +249,7 @@ int main(int argc, char *argv[]) {
     std::string checkPackage = program.get<std::string>("--check");
     std::vector<std::string> installPackages =
         program.get<std::vector<std::string>>("--install");
+    bool sortPackages = program.get<bool>("--sort");
 
     if (!checkPackage.empty()) {
       if (isPackageInstalled(checkPackage)) {
@@ -241,6 +264,12 @@ int main(int argc, char *argv[]) {
 
     std::string packageFilePath = getPackageFilePath(customFilePath);
     bool isJsonc = packageFilePath.find(".jsonc") != std::string::npos;
+
+    if (sortPackages) {
+      sortAndUpdatePackagesInFile(packageFilePath, isJsonc);
+      return 0;
+    }
+
     std::string fileContent = readFileContent(packageFilePath);
     std::vector<std::string> packages = parsePackageFile(fileContent, isJsonc);
 
