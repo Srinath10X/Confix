@@ -265,15 +265,11 @@ int main(int argc, char *argv[]) {
     std::string packageFilePath = getPackageFilePath(customFilePath);
     bool isJsonc = packageFilePath.find(".jsonc") != std::string::npos;
 
-    if (sortPackages) {
-      sortAndUpdatePackagesInFile(packageFilePath, isJsonc);
-      return 0;
-    }
-
-    std::string fileContent = readFileContent(packageFilePath);
-    std::vector<std::string> packages = parsePackageFile(fileContent, isJsonc);
-
     if (!installPackages.empty()) {
+      std::string fileContent = readFileContent(packageFilePath);
+      std::vector<std::string> packages =
+          parsePackageFile(fileContent, isJsonc);
+
       for (const std::string &installPackageName : installPackages) {
         try {
           installPackage(installPackageName);
@@ -284,15 +280,27 @@ int main(int argc, char *argv[]) {
           if (std::find(packages.begin(), packages.end(), installPackageName) ==
               packages.end()) {
             packages.push_back(installPackageName);
-            updatePackageFile(packageFilePath, packages, isJsonc);
           }
         } catch (const std::runtime_error &ex) {
           std::cerr << "Error: " << ex.what() << std::endl;
         }
       }
+
+      if (sortPackages) {
+        std::sort(packages.begin(), packages.end());
+      }
+
+      updatePackageFile(packageFilePath, packages, isJsonc);
       return 0;
     }
 
+    if (sortPackages) {
+      sortAndUpdatePackagesInFile(packageFilePath, isJsonc);
+      return 0;
+    }
+
+    std::string fileContent = readFileContent(packageFilePath);
+    std::vector<std::string> packages = parsePackageFile(fileContent, isJsonc);
     handlePackages(packages);
   } catch (const std::exception &ex) {
     std::cerr << "Error: " << ex.what() << std::endl;
