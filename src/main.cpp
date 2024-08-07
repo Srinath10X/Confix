@@ -11,7 +11,7 @@
 
 using namespace Json;
 
-const std::string VERSION = "confix v0.1.1";
+const std::string VERSION = "confix v0.1.2";
 
 // Function to check if a package is available in AUR
 bool isPackageAvailableInAUR(const std::string &packageName) {
