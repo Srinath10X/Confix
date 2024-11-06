@@ -4,6 +4,7 @@ CXXFLAGS = -g -Wall -Werror
 LIBS = -ljsoncpp
 SRC_FILE = src/main.cpp
 BIN_FILE_NAME = confix
+NIX_OUTPUT_BIN_DIR = result
 
 all: main
 
@@ -16,4 +17,4 @@ install: $(SRC_FILE)
 	mv $(BIN_FILE_NAME) $(HOME)/.local/bin/
 
 clean:
-	rm -f $(BIN_FILE_NAME)
+	rm -f $(BIN_FILE_NAME) $(NIX_OUTPUT_BIN_DIR)
