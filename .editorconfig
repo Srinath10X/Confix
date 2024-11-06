@@ -1,25 +1,17 @@
-# top-most EditorConfig file
 root = true
 
-# Unix-style newlines with a newline ending every file
 [*]
 end_of_line = lf
 insert_final_newline = true
 
-# Set charset
 charset = utf-8
 
-# Tab indentation (spaces are forbidden in this project)
 indent_style = tab
 indent_size = 2
 
-# Remove trailing whitespace
 trim_trailing_whitespace = true
 
-# Ensure files end with a single newline character
 insert_final_newline = true
 
-# C++ files
 [*.cpp]
-
 style = "{BasedOnStyle: Google, IndentWidth: 4, TabWidth: '4', UseTab: Always}"
