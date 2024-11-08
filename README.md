@@ -42,6 +42,7 @@ You can install these dependencies on Arch-based systems using the following com
 ```bash
 sudo pacman -S --noconfirm jsoncpp argparse
 ```
+> If you are using nix then it pretty easy to install dependencies and build the project. use `nix build` to build the project and the binary will be avilable for you in the `result/bin/confix` you can run that binary with `nix run`
 
 ## Installation
 
