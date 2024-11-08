@@ -27,7 +27,15 @@
       };
 
       devShells.x86_64-linux.default = pkgs.mkShell {
-        buildInputs = [ pkgs.gcc pkgs.gnumake pkgs.argparse pkgs.jsoncpp ];
+        buildInputs = with pkgs; [
+          # build essentials
+          gcc
+          gnumake
+
+          # dependencies
+          argparse
+          jsoncpp
+        ];
       };
     };
 }
